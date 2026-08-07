@@ -10,10 +10,11 @@ import {
   getNetWorthSeries,
   listAccounts,
   listCategories,
+  listCategoryGroups,
   listHoldings,
   listTransactions,
 } from '../lib/repository';
-import type { Account, Category, Holding, Transaction } from '../lib/types';
+import type { Account, Category, CategoryGroup, Holding, Transaction } from '../lib/types';
 import { netWorthContribution } from '../lib/types';
 
 const RECENT_LIMIT = 8;
@@ -23,6 +24,7 @@ export function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [groups, setGroups] = useState<CategoryGroup[]>([]);
   const [recent, setRecent] = useState<Transaction[]>([]);
   const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
   const [series, setSeries] = useState<{ month: string; value: number }[]>([]);
@@ -33,10 +35,11 @@ export function Dashboard() {
     const monthStart = `${now.toISOString().slice(0, 7)}-01`;
     const monthEnd = `${now.toISOString().slice(0, 7)}-31`;
 
-    const [accountsRes, holdingsRes, categoriesRes, recentRes, monthRes, seriesRes] = await Promise.all([
+    const [accountsRes, holdingsRes, categoriesRes, groupsRes, recentRes, monthRes, seriesRes] = await Promise.all([
       listAccounts(),
       listHoldings(),
       listCategories(),
+      listCategoryGroups(),
       listTransactions({ limit: RECENT_LIMIT }),
       listTransactions({ startDate: monthStart, endDate: monthEnd, limit: 500 }),
       getNetWorthSeries(CHART_MONTHS),
@@ -45,6 +48,7 @@ export function Dashboard() {
     setAccounts(accountsRes);
     setHoldings(holdingsRes);
     setCategories(categoriesRes);
+    setGroups(groupsRes);
     setRecent(recentRes.rows);
     setMonthTransactions(monthRes.rows);
     setSeries(seriesRes);
@@ -70,7 +74,7 @@ export function Dashboard() {
       <NetWorthPanel current={netWorth} series={series} />
       <Grid>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          <BudgetsCard categories={categories} monthTransactions={monthTransactions} />
+          <BudgetsCard groups={groups} categories={categories} monthTransactions={monthTransactions} />
           <AccountsCard accounts={accounts} onChanged={load} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>

@@ -1,3 +1,36 @@
+.budgetGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-2);
+}
+
+.budgetGroup + .budgetGroup {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.budgetGroupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.budgetGroupName {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--low);
+}
+
+.budgetGroupTotal {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mid);
+}
+
 .budgetRow {
   display: flex;
   flex-direction: column;

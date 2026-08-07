@@ -1,19 +1,20 @@
 import { useState, type FormEvent } from 'react';
-import type { Account, Holding } from '../../lib/types';
+import type { Holding } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
-import { deleteHolding, insertHolding, updateHolding } from '../../lib/repository';
+import { deleteHolding, findOrCreateInvestedAccount, insertHolding, updateHolding } from '../../lib/repository';
 
 interface HoldingFormProps {
   holding?: Holding;
-  accounts: Account[];
+  currentAccountName?: string;
+  currentAccountInstitution?: string | null;
   onDone: () => void;
 }
 
-export function HoldingForm({ holding, accounts, onDone }: HoldingFormProps) {
-  const investedAccounts = accounts.filter((a) => a.type === 'invested');
+export function HoldingForm({ holding, currentAccountName, currentAccountInstitution, onDone }: HoldingFormProps) {
   const [symbol, setSymbol] = useState(holding?.symbol ?? '');
   const [name, setName] = useState(holding?.name ?? '');
-  const [accountId, setAccountId] = useState(holding?.account_id ?? investedAccounts[0]?.id ?? '');
+  const [accountName, setAccountName] = useState(currentAccountName ?? '');
+  const [institution, setInstitution] = useState(currentAccountInstitution ?? '');
   const [quantity, setQuantity] = useState(holding ? String(holding.quantity) : '');
   const [value, setValue] = useState(holding ? centsToDollarsString(holding.institution_value_cents) : '');
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +25,11 @@ export function HoldingForm({ holding, accounts, onDone }: HoldingFormProps) {
     setError(null);
     setPending(true);
     try {
+      const account = await findOrCreateInvestedAccount(accountName, institution || null);
       const input = {
         symbol: symbol.toUpperCase(),
         name: name || null,
-        account_id: accountId,
+        account_id: account.id,
         quantity: Number.parseFloat(quantity) || 0,
         cost_basis_cents: null,
         institution_value_cents: parseDollarsToCents(value),
@@ -58,10 +60,6 @@ export function HoldingForm({ holding, accounts, onDone }: HoldingFormProps) {
     }
   }
 
-  if (investedAccounts.length === 0) {
-    return <p className="formError">Add an "invested" type account first.</p>;
-  }
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="field">
@@ -73,14 +71,12 @@ export function HoldingForm({ holding, accounts, onDone }: HoldingFormProps) {
         <input id="h-name" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="field">
-        <label htmlFor="h-account">Account</label>
-        <select id="h-account" value={accountId} onChange={(e) => setAccountId(e.target.value)} required>
-          {investedAccounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="h-account">Account (e.g. "401K", "Brokerage")</label>
+        <input id="h-account" value={accountName} onChange={(e) => setAccountName(e.target.value)} required />
+      </div>
+      <div className="field">
+        <label htmlFor="h-institution">Institution (optional)</label>
+        <input id="h-institution" value={institution} onChange={(e) => setInstitution(e.target.value)} />
       </div>
       <div className="field">
         <label htmlFor="h-quantity">Quantity</label>

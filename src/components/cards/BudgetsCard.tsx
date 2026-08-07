@@ -1,27 +1,41 @@
 import { Link } from 'react-router-dom';
 import { Card } from '../primitives/Card';
 import { formatMoney } from '../../lib/money';
-import type { Category, Transaction } from '../../lib/types';
+import type { Category, CategoryGroup, Transaction } from '../../lib/types';
 import './BudgetsCard.css';
 
 interface BudgetsCardProps {
+  groups: CategoryGroup[];
   categories: Category[];
   monthTransactions: Transaction[];
 }
 
-export function BudgetsCard({ categories, monthTransactions }: BudgetsCardProps) {
-  const spendingCategories = categories.filter((c) => c.kind === 'spending');
-
+export function BudgetsCard({ groups, categories, monthTransactions }: BudgetsCardProps) {
   const spentByCategory = new Map<string, number>();
   for (const tx of monthTransactions) {
     if (tx.amount_cents <= 0 || !tx.category_id) continue; // only outflows count as spending
     spentByCategory.set(tx.category_id, (spentByCategory.get(tx.category_id) ?? 0) + tx.amount_cents);
   }
 
-  const rows = spendingCategories
+  const spendingCategories = categories.filter((c) => c.kind === 'spending');
+
+  const sections = groups
+    .map((group) => {
+      const groupCategories = spendingCategories
+        .filter((c) => c.group_id === group.id)
+        .map((c) => ({ category: c, spent: spentByCategory.get(c.id) ?? 0 }))
+        .filter((r) => r.spent > 0 || r.category.monthly_limit_cents);
+      const groupTotal = groupCategories.reduce((sum, r) => sum + r.spent, 0);
+      return { group, rows: groupCategories, total: groupTotal };
+    })
+    .filter((s) => s.rows.length > 0);
+
+  const ungroupedRows = spendingCategories
+    .filter((c) => !c.group_id)
     .map((c) => ({ category: c, spent: spentByCategory.get(c.id) ?? 0 }))
-    .filter((r) => r.spent > 0 || r.category.monthly_limit_cents)
-    .sort((a, b) => b.spent - a.spent);
+    .filter((r) => r.spent > 0 || r.category.monthly_limit_cents);
+
+  const nothingToShow = sections.length === 0 && ungroupedRows.length === 0;
 
   return (
     <Card
@@ -32,29 +46,54 @@ export function BudgetsCard({ categories, monthTransactions }: BudgetsCardProps)
         </Link>
       }
     >
-      {rows.length === 0 && <p className="cardEmpty">No spending logged this month yet.</p>}
-      {rows.map(({ category, spent }) => {
-        const limit = category.monthly_limit_cents;
-        const pct = limit ? Math.min(100, (spent / limit) * 100) : 0;
-        const over = limit !== null && limit !== undefined && spent > limit;
-        return (
-          <div key={category.id} className="budgetRow">
-            <div className="budgetRowHeader">
-              <span className="budgetRowName">{category.name}</span>
-              <span className="budgetRowAmount tabular">
-                {formatMoney(spent)}
-                {limit ? ` / ${formatMoney(limit)}` : ' · no limit'}
-              </span>
-            </div>
-            <div className="budgetTrack">
-              <div
-                className={`budgetFill${over ? ' budgetFillOver' : ''}${!limit ? ' budgetFillDashed' : ''}`}
-                style={{ width: limit ? `${pct}%` : '100%' }}
-              />
-            </div>
+      {nothingToShow && <p className="cardEmpty">No spending logged this month yet.</p>}
+
+      {sections.map(({ group, rows, total }) => (
+        <div key={group.id} className="budgetGroup">
+          <div className="budgetGroupHeader">
+            <span className="budgetGroupName">{group.name}</span>
+            <span className="budgetGroupTotal tabular">{formatMoney(total)}</span>
           </div>
-        );
-      })}
+          {rows.map(({ category, spent }) => (
+            <BudgetRow key={category.id} name={category.name} spent={spent} limit={category.monthly_limit_cents} />
+          ))}
+        </div>
+      ))}
+
+      {ungroupedRows.length > 0 && (
+        <div className="budgetGroup">
+          {sections.length > 0 && (
+            <div className="budgetGroupHeader">
+              <span className="budgetGroupName">Ungrouped</span>
+            </div>
+          )}
+          {ungroupedRows.map(({ category, spent }) => (
+            <BudgetRow key={category.id} name={category.name} spent={spent} limit={category.monthly_limit_cents} />
+          ))}
+        </div>
+      )}
     </Card>
+  );
+}
+
+function BudgetRow({ name, spent, limit }: { name: string; spent: number; limit: number | null }) {
+  const pct = limit ? Math.min(100, (spent / limit) * 100) : 0;
+  const over = limit !== null && limit !== undefined && spent > limit;
+  return (
+    <div className="budgetRow">
+      <div className="budgetRowHeader">
+        <span className="budgetRowName">{name}</span>
+        <span className="budgetRowAmount tabular">
+          {formatMoney(spent)}
+          {limit ? ` / ${formatMoney(limit)}` : ' · no limit'}
+        </span>
+      </div>
+      <div className="budgetTrack">
+        <div
+          className={`budgetFill${over ? ' budgetFillOver' : ''}${!limit ? ' budgetFillDashed' : ''}`}
+          style={{ width: limit ? `${pct}%` : '100%' }}
+        />
+      </div>
+    </div>
   );
 }

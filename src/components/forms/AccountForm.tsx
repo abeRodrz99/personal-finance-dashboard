@@ -70,7 +70,6 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
         <label htmlFor="acc-type">Type</label>
         <select id="acc-type" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
           <option value="cash">Cash</option>
-          <option value="invested">Invested</option>
           <option value="owed">Owed (credit card, loan)</option>
         </select>
       </div>

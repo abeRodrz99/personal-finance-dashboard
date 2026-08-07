@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Account, Category, Holding, Transaction } from './types';
+import type { Account, Category, CategoryGroup, Holding, Transaction } from './types';
 
 /**
  * Every function here assumes an authenticated session. RLS enforces the
@@ -49,6 +49,65 @@ export async function deleteAccount(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Invested accounts (brokerage, 401k, etc.) are never created directly by
+ * the user — they're implied by adding a holding. This finds an existing
+ * invested account matching the given name, or creates one, so the Holdings
+ * form can just ask for an account name instead of a pre-existing account.
+ */
+export async function findOrCreateInvestedAccount(name: string, institution: string | null): Promise<Account> {
+  const trimmed = name.trim();
+  const existing = (await listAccounts()).find(
+    (a) => a.type === 'invested' && a.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (existing) return existing;
+
+  return insertAccount({
+    name: trimmed,
+    institution,
+    type: 'invested',
+    subtype: null,
+    mask: null,
+    balance_cents: 0,
+  });
+}
+
+// --- Category Groups ---------------------------------------------------------
+
+export async function listCategoryGroups(): Promise<CategoryGroup[]> {
+  const { data, error } = await supabase.from('category_groups').select('*').order('sort_order');
+  if (error) throw error;
+  return data as CategoryGroup[];
+}
+
+export async function insertCategoryGroup(name: string): Promise<CategoryGroup> {
+  const user_id = await currentUserId();
+  const existing = await listCategoryGroups();
+  const sort_order = existing.length;
+  const { data, error } = await supabase
+    .from('category_groups')
+    .insert({ user_id, name, sort_order })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as CategoryGroup;
+}
+
+export async function updateCategoryGroup(id: string, name: string): Promise<CategoryGroup> {
+  const { data, error } = await supabase.from('category_groups').update({ name }).eq('id', id).select().single();
+  if (error) throw error;
+  return data as CategoryGroup;
+}
+
+/** Deletes a group; its categories become ungrouped (not deleted). */
+export async function deleteCategoryGroup(id: string): Promise<void> {
+  const { error: ungroupErr } = await supabase.from('categories').update({ group_id: null }).eq('group_id', id);
+  if (ungroupErr) throw ungroupErr;
+
+  const { error } = await supabase.from('category_groups').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // --- Categories ---------------------------------------------------------
 
 export async function listCategories(): Promise<Category[]> {
@@ -72,7 +131,7 @@ export async function insertCategory(
 
 export async function updateCategory(
   id: string,
-  input: Partial<Pick<Category, 'name' | 'kind' | 'monthly_limit_cents'>>,
+  input: Partial<Pick<Category, 'name' | 'kind' | 'monthly_limit_cents' | 'group_id'>>,
 ): Promise<Category> {
   const { data, error } = await supabase.from('categories').update(input).eq('id', id).select().single();
   if (error) throw error;
@@ -218,6 +277,9 @@ export async function insertHolding(
     .select()
     .single();
   if (error) throw error;
+
+  await adjustAccountBalanceRaw(input.account_id, input.institution_value_cents);
+
   return data as Holding;
 }
 
@@ -225,14 +287,43 @@ export async function updateHolding(
   id: string,
   input: Partial<Omit<Holding, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
 ): Promise<Holding> {
+  const { data: before, error: beforeErr } = await supabase.from('holdings').select('*').eq('id', id).single();
+  if (beforeErr) throw beforeErr;
+
   const { data, error } = await supabase.from('holdings').update(input).eq('id', id).select().single();
   if (error) throw error;
+
+  if (
+    input.institution_value_cents !== undefined &&
+    input.institution_value_cents !== before.institution_value_cents
+  ) {
+    const delta = input.institution_value_cents - before.institution_value_cents;
+    await adjustAccountBalanceRaw(before.account_id, delta);
+  }
+
   return data as Holding;
 }
 
 export async function deleteHolding(id: string): Promise<void> {
+  const { data: holding, error: fetchErr } = await supabase.from('holdings').select('*').eq('id', id).single();
+  if (fetchErr) throw fetchErr;
+
   const { error } = await supabase.from('holdings').delete().eq('id', id);
   if (error) throw error;
+
+  await adjustAccountBalanceRaw(holding.account_id, -holding.institution_value_cents);
+}
+
+/** Adds a cents delta straight to an account's balance, no sign flipping (used for holdings). */
+async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): Promise<void> {
+  const { data: account, error } = await supabase.from('accounts').select('balance_cents').eq('id', accountId).single();
+  if (error) throw error;
+
+  const { error: updateErr } = await supabase
+    .from('accounts')
+    .update({ balance_cents: account.balance_cents + centsDelta })
+    .eq('id', accountId);
+  if (updateErr) throw updateErr;
 }
 
 // --- Net worth trend ---------------------------------------------------------

@@ -14,11 +14,15 @@ interface HoldingsCardProps {
 
 export function HoldingsCard({ holdings, accounts, onChanged }: HoldingsCardProps) {
   const [dialogHolding, setDialogHolding] = useState<Holding | 'new' | null>(null);
+  const accountById = new Map(accounts.map((a) => [a.id, a]));
 
   function close() {
     setDialogHolding(null);
     onChanged();
   }
+
+  const editingAccount =
+    dialogHolding && dialogHolding !== 'new' ? accountById.get(dialogHolding.account_id) : undefined;
 
   return (
     <>
@@ -35,7 +39,7 @@ export function HoldingsCard({ holdings, accounts, onChanged }: HoldingsCardProp
           <Row
             key={h.id}
             title={h.symbol}
-            subtitle={`${h.quantity} sh`}
+            subtitle={`${accountById.get(h.account_id)?.name ?? ''} · ${h.quantity} sh`}
             trailing={formatMoney(h.institution_value_cents)}
             onEdit={() => setDialogHolding(h)}
           />
@@ -44,7 +48,12 @@ export function HoldingsCard({ holdings, accounts, onChanged }: HoldingsCardProp
 
       <Dialog open={dialogHolding !== null} onClose={close} title={dialogHolding === 'new' ? 'Add holding' : 'Edit holding'}>
         {dialogHolding && (
-          <HoldingForm holding={dialogHolding === 'new' ? undefined : dialogHolding} accounts={accounts} onDone={close} />
+          <HoldingForm
+            holding={dialogHolding === 'new' ? undefined : dialogHolding}
+            currentAccountName={editingAccount?.name}
+            currentAccountInstitution={editingAccount?.institution}
+            onDone={close}
+          />
         )}
       </Dialog>
     </>

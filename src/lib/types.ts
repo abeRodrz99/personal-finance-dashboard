@@ -14,9 +14,18 @@ export interface Account {
   updated_at: string;
 }
 
+export interface CategoryGroup {
+  id: string;
+  user_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Category {
   id: string;
   user_id: string;
+  group_id: string | null;
   name: string;
   kind: CategoryKind;
   monthly_limit_cents: number | null;
