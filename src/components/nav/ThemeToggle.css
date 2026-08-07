@@ -1,0 +1,31 @@
+.themeToggle {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--seg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.themeToggle:hover {
+  background: var(--chip);
+}
+
+.themeToggleIcon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--mid);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.themeToggleIconFilled {
+  width: 18px;
+  height: 18px;
+  fill: var(--mid);
+  stroke: none;
+}

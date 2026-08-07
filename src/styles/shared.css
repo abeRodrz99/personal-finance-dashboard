@@ -1,0 +1,31 @@
+.cardAddBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--up);
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-control);
+}
+
+.cardAddBtn:hover {
+  background: var(--up-tint);
+}
+
+.cardEmpty {
+  font-size: 13px;
+  color: var(--mid);
+  padding: var(--space-3) 0;
+}
+
+.cardFooterLink {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: var(--mid);
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.cardFooterLink:hover {
+  color: var(--fg);
+}

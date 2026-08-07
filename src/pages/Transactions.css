@@ -1,0 +1,54 @@
+.txFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.txFilters input,
+.txFilters select {
+  background: var(--seg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 8px var(--space-3);
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.txSearch {
+  flex: 1 1 200px;
+}
+
+.txTotal {
+  font-size: 13px;
+  color: var(--mid);
+  margin-bottom: var(--space-3);
+}
+
+.txPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--mid);
+}
+
+.txPagination button {
+  color: var(--fg);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--seg);
+}
+
+.txPagination button:hover:not(:disabled) {
+  background: var(--chip);
+}
+
+.txPagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

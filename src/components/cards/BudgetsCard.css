@@ -1,0 +1,44 @@
+.budgetRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2) 0;
+}
+
+.budgetRowHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.budgetRowName {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.budgetRowAmount {
+  color: var(--mid);
+}
+
+.budgetTrack {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+  overflow: hidden;
+}
+
+.budgetFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--up);
+  transition: width 0.3s ease;
+}
+
+.budgetFillOver {
+  background: var(--down);
+}
+
+.budgetFillDashed {
+  background: repeating-linear-gradient(45deg, var(--low), var(--low) 4px, transparent 4px, transparent 8px);
+  opacity: 0.5;
+}

@@ -1,0 +1,59 @@
+.shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.shellHeader {
+  max-width: var(--shell-max-ultra);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.shellHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.shellHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.shellBack {
+  font-size: 20px;
+  color: var(--mid);
+  display: flex;
+  align-items: center;
+}
+
+.shellTitle {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.shellSignOut {
+  font-size: 13px;
+  color: var(--mid);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--seg);
+}
+
+.shellSignOut:hover {
+  background: var(--chip);
+  color: var(--fg);
+}
+
+.shellMain {
+  max-width: var(--shell-max-ultra);
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-6);
+}

@@ -1,0 +1,126 @@
+/*
+ * Global tokens and reset only.
+ * Component-specific rules live in each component's own .css file.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --radius-card: 16px;
+  --radius-tile: 14px;
+  --radius-control: 9px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 22px;
+  --space-6: 28px;
+
+  --shell-max: 600px;
+  --shell-max-wide: 1180px;
+  --shell-max-ultra: 1280px;
+}
+
+[data-theme='dark'] {
+  --bg: #000000;
+  --card: #141416;
+  --line: #232326;
+  --fg: #f5f5f7;
+  --mid: #98989f;
+  --low: #6a6a70;
+  --up: #00d26a;
+  --down: #ff453a;
+  --seg: #1c1c1e;
+  --seg-on: #3a3a3c;
+  --chip: #2c2c2e;
+  --track: #2c2c2e;
+  --up-tint: rgba(0, 210, 106, 0.15);
+  --down-tint: rgba(255, 69, 58, 0.15);
+  --card-border: transparent;
+  --card-shadow: none;
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg: #ffffff;
+  --card: #f7f7f5;
+  --line: #e6e6e3;
+  --fg: #0a0a0a;
+  --mid: #737373;
+  --low: #a3a3a3;
+  --up: #0a8f4d;
+  --down: #c0281c;
+  --seg: #f0f0ee;
+  --seg-on: #ffffff;
+  --chip: #e8e8e5;
+  --track: #e2e2df;
+  --up-tint: rgba(10, 143, 77, 0.12);
+  --down-tint: rgba(192, 40, 28, 0.11);
+  --card-border: var(--line);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input, select {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--up);
+  outline-offset: 3px;
+  border-radius: var(--space-2);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

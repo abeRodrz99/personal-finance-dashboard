@@ -1,0 +1,65 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  position: relative;
+}
+
+.rowLeading {
+  flex: none;
+}
+
+.rowMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSubtitle {
+  font-size: 12px;
+  color: var(--mid);
+}
+
+.rowTrailing {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.rowEdit {
+  flex: none;
+  font-size: 12px;
+  color: var(--mid);
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-control);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.row:hover .rowEdit {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .rowEdit {
+    opacity: 1;
+  }
+}
+
+.rowEdit:hover {
+  background: var(--chip);
+  color: var(--fg);
+}
