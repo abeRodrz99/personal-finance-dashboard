@@ -49,28 +49,6 @@ export async function deleteAccount(id: string): Promise<void> {
   if (error) throw error;
 }
 
-/**
- * Invested accounts (brokerage, 401k, etc.) are never created directly by
- * the user — they're implied by adding a holding. This finds an existing
- * invested account matching the given name, or creates one, so the Holdings
- * form can just ask for an account name instead of a pre-existing account.
- */
-export async function findOrCreateInvestedAccount(name: string, institution: string | null): Promise<Account> {
-  const trimmed = name.trim();
-  const existing = (await listAccounts()).find(
-    (a) => a.type === 'invested' && a.name.toLowerCase() === trimmed.toLowerCase(),
-  );
-  if (existing) return existing;
-
-  return insertAccount({
-    name: trimmed,
-    institution,
-    type: 'invested',
-    subtype: null,
-    mask: null,
-    balance_cents: 0,
-  });
-}
 
 // --- Category Groups ---------------------------------------------------------
 
@@ -297,6 +275,19 @@ export async function deleteTransaction(id: string): Promise<void> {
   await adjustAccountBalance(tx.account_id, -tx.amount_cents);
 }
 
+/** Deletes multiple transactions, correctly reversing each one's balance effect. */
+export async function bulkDeleteTransactions(ids: string[]): Promise<void> {
+  for (const id of ids) {
+    await deleteTransaction(id);
+  }
+}
+
+/** Sets is_ignored on multiple transactions at once — no balance effect either way. */
+export async function bulkSetTransactionsIgnored(ids: string[], ignored: boolean): Promise<void> {
+  const { error } = await supabase.from('transactions').update({ is_ignored: ignored }).in('id', ids);
+  if (error) throw error;
+}
+
 async function adjustAccountBalance(accountId: string, amountCentsDelta: number): Promise<void> {
   const { data: account, error } = await supabase
     .from('accounts')
@@ -372,6 +363,25 @@ export async function deleteHolding(id: string): Promise<void> {
   await adjustAccountBalanceRaw(holding.account_id, -holding.institution_value_cents);
 }
 
+export async function findOrCreateInvestedAccount(name: string, institution: string | null): Promise<Account> {
+  const trimmed = name.trim();
+  const existing = (await listAccounts()).find(
+    (a) => a.type === 'invested' && a.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (existing) return existing;
+
+  return insertAccount({
+    name: trimmed,
+    institution,
+    type: 'invested',
+    subtype: null,
+    mask: null,
+    balance_cents: 0,
+    opening_balance_cents: null,
+    opening_balance_date: null,
+  });
+}
+
 /** Adds a cents delta straight to an account's balance, no sign flipping (used for holdings). */
 async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): Promise<void> {
   const { data: account, error } = await supabase.from('accounts').select('balance_cents').eq('id', accountId).single();
@@ -389,37 +399,32 @@ async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): P
 export type NetWorthGranularity = 'day' | 'month';
 
 /**
- * Reconstructs net worth at each point in a trailing window by working
- * backward from today's balance using the transaction ledger — no separate
- * snapshot table needed, and no waiting for real time to pass to see
- * history. Supports day-level granularity (for 1M/3M views, where monthly
- * buckets would be too coarse to show anything) or month-level (for a 1Y
- * view).
+ * Reconstructs net worth at each point in a trailing window, per account,
+ * then sums the results. No separate snapshot table needed, and no waiting
+ * for real time to pass to see history.
  *
- * The logic: every transaction's effect on net worth is always exactly
- * -amount_cents, regardless of account type (an outflow reduces cash *or*
- * increases debt — either way net worth drops by the same amount; an inflow
- * is the mirror image). So "net worth as of a past point in time" is just
- * today's total with every transaction *after* that point added back in.
+ * For each cash/owed account: work backward from today's balance by adding
+ * back every transaction dated after the point in question (a transaction's
+ * balance effect is always direction * amount_cents, where direction is +1
+ * for owed accounts and -1 otherwise). This is accurate for any point on or
+ * after the account's `opening_balance_date`, since it assumes every change
+ * since then has been logged. For points *before* that anchor — where nothing
+ * has necessarily been logged — the value is held flat at
+ * `opening_balance_cents` rather than extrapolated, since we have no basis
+ * to guess further back. Accounts with no anchor set fall back to the old
+ * behavior: reconstruct all the way back using whatever transactions exist.
  *
- * Limitation: invested-account (holdings) value isn't reconstructed
- * historically since we don't track past market prices — its current value
- * is held constant across the whole window. Cash and debt movements (the
- * vast majority of day-to-day activity) are fully accurate back to whenever
- * transactions started being logged.
+ * Invested (holdings) value has no anchor concept — it's held flat at its
+ * current value across the whole window, since there's no historical price
+ * data to reconstruct from.
  */
 export async function getNetWorthSeries(
   periods: number,
   granularity: NetWorthGranularity = 'month',
 ): Promise<{ date: string; value: number }[]> {
   const accounts = await listAccounts();
-  const typeByAccount = new Map(accounts.map((a) => [a.id, a.type]));
-
+  const cashOwedAccounts = accounts.filter((a) => a.type !== 'invested');
   const investedTotal = accounts.filter((a) => a.type === 'invested').reduce((sum, a) => sum + a.balance_cents, 0);
-  const currentCashOwedNet = accounts.reduce((sum, a) => {
-    if (a.type === 'invested') return sum;
-    return sum + (a.type === 'owed' ? -a.balance_cents : a.balance_cents);
-  }, 0);
 
   const now = new Date();
   const windowStart =
@@ -431,7 +436,25 @@ export async function getNetWorthSeries(
     startDate: windowStart.toISOString().slice(0, 10),
     limit: 5000,
   });
-  const relevantTxs = txs.filter((tx) => typeByAccount.get(tx.account_id) !== 'invested');
+  const txsByAccount = new Map<string, Transaction[]>();
+  for (const tx of txs) {
+    if (!txsByAccount.has(tx.account_id)) txsByAccount.set(tx.account_id, []);
+    txsByAccount.get(tx.account_id)!.push(tx);
+  }
+
+  function cashOwedValueAt(account: Account, pointDate: Date, cutoff: Date): number {
+    if (account.opening_balance_date && pointDate < new Date(account.opening_balance_date)) {
+      const anchor = account.opening_balance_cents ?? 0;
+      return account.type === 'owed' ? -anchor : anchor;
+    }
+    const direction = account.type === 'owed' ? 1 : -1;
+    const accountTxs = txsByAccount.get(account.id) ?? [];
+    const futureAmountSum = accountTxs
+      .filter((tx) => new Date(tx.date) >= cutoff)
+      .reduce((sum, tx) => sum + tx.amount_cents, 0);
+    const reconstructedBalance = account.balance_cents - direction * futureAmountSum;
+    return account.type === 'owed' ? -reconstructedBalance : reconstructedBalance;
+  }
 
   const series: { date: string; value: number }[] = [];
   for (let i = periods - 1; i >= 0; i--) {
@@ -449,14 +472,9 @@ export async function getNetWorthSeries(
       label = pointDate.toISOString().slice(0, 10);
     }
 
-    const futureAmountSum = relevantTxs
-      .filter((tx) => new Date(tx.date) >= cutoff)
-      .reduce((sum, tx) => sum + tx.amount_cents, 0);
+    const cashOwedTotal = cashOwedAccounts.reduce((sum, a) => sum + cashOwedValueAt(a, pointDate, cutoff), 0);
 
-    // Add back every transaction that happened after this point to "undo"
-    // its effect and recover what the balance was at that point in time.
-    const pastCashOwedNet = currentCashOwedNet + futureAmountSum;
-    series.push({ date: label, value: pastCashOwedNet + investedTotal });
+    series.push({ date: label, value: cashOwedTotal + investedTotal });
   }
 
   return series;

@@ -10,6 +10,8 @@ export interface Account {
   subtype: string | null;
   mask: string | null;
   balance_cents: number;
+  opening_balance_cents: number | null;
+  opening_balance_date: string | null; // ISO yyyy-mm-dd
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +45,7 @@ export interface Transaction {
   merchant: string;
   raw_text: string | null;
   amount_cents: number; // positive = outflow, negative = inflow
+  is_ignored: boolean; // excluded from budget totals, still counts toward balance
   created_at: string;
 }
 
@@ -55,6 +58,8 @@ export interface Holding {
   quantity: number;
   cost_basis_cents: number | null;
   institution_value_cents: number;
+  opening_value_cents: number | null;
+  opening_date: string | null; // ISO yyyy-mm-dd
   created_at: string;
   updated_at: string;
 }

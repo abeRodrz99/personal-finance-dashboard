@@ -1,0 +1,36 @@
+.confirmBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.confirmMessage {
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.btnGhost {
+  font-size: 14px;
+  color: var(--mid);
+  padding: 10px var(--space-4);
+  border-radius: var(--radius-control);
+}
+
+.btnGhost:hover {
+  background: var(--seg);
+  color: var(--fg);
+}
+
+.btnDangerSolid {
+  background: var(--down);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px var(--space-4);
+  border-radius: var(--radius-control);
+}
+
+.btnDangerSolid:hover {
+  opacity: 0.9;
+}

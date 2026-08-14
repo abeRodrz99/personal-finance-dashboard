@@ -14,6 +14,15 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
   const [type, setType] = useState<AccountType>(account?.type ?? 'cash');
   const [balance, setBalance] = useState(account ? centsToDollarsString(account.balance_cents) : '');
   const [mask, setMask] = useState(account?.mask ?? '');
+  const [showBackfill, setShowBackfill] = useState(
+    Boolean(account?.opening_balance_date || account?.opening_balance_cents),
+  );
+  const [openingDate, setOpeningDate] = useState(account?.opening_balance_date ?? '');
+  const [openingBalance, setOpeningBalance] = useState(
+    account?.opening_balance_cents !== null && account?.opening_balance_cents !== undefined
+      ? centsToDollarsString(account.opening_balance_cents)
+      : '',
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -29,6 +38,8 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
         subtype: null,
         mask: mask || null,
         balance_cents: parseDollarsToCents(balance),
+        opening_balance_date: showBackfill && openingDate ? openingDate : null,
+        opening_balance_cents: showBackfill && openingDate && openingBalance ? parseDollarsToCents(openingBalance) : null,
       };
       if (account) {
         await updateAccount(account.id, input);
@@ -74,7 +85,7 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
         </select>
       </div>
       <div className="field">
-        <label htmlFor="acc-balance">Balance</label>
+        <label htmlFor="acc-balance">Balance (current, today)</label>
         <input
           id="acc-balance"
           inputMode="decimal"
@@ -88,6 +99,48 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
         <label htmlFor="acc-mask">Last 4 digits (optional)</label>
         <input id="acc-mask" maxLength={4} value={mask} onChange={(e) => setMask(e.target.value)} />
       </div>
+
+      <div className="fieldCheckbox">
+        <label htmlFor="acc-backfill-toggle">
+          <input
+            id="acc-backfill-toggle"
+            type="checkbox"
+            checked={showBackfill}
+            onChange={(e) => setShowBackfill(e.target.checked)}
+          />
+          Backfilling history? Set a starting balance
+        </label>
+      </div>
+
+      {showBackfill && (
+        <>
+          <p className="fieldHint">
+            Tells the net worth chart what this account was actually worth on a given date, instead of
+            assuming today's balance stretches all the way back. Anything before this date is shown flat;
+            from this date forward it's reconstructed from your logged transactions.
+          </p>
+          <div className="field">
+            <label htmlFor="acc-opening-date">As of date</label>
+            <input
+              id="acc-opening-date"
+              type="date"
+              value={openingDate}
+              onChange={(e) => setOpeningDate(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="acc-opening-balance">Balance on that date</label>
+            <input
+              id="acc-opening-balance"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={openingBalance}
+              onChange={(e) => setOpeningBalance(e.target.value)}
+            />
+          </div>
+        </>
+      )}
+
       {error && <p className="formError">{error}</p>}
       <div className="formActions">
         {account ? (
