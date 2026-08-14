@@ -10,11 +10,11 @@
   border-top: 1px solid var(--line);
 }
 
-.budgetGroupHeader {
+.budgetGroupHeaderRow {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: var(--space-1) 0 var(--space-2);
+  padding: var(--space-1) 0 6px;
 }
 
 .budgetGroupName {
@@ -25,10 +25,18 @@
   color: var(--low);
 }
 
-.budgetGroupTotal {
+.budgetGroupAmount {
   font-size: 13px;
   font-weight: 600;
   color: var(--mid);
+}
+
+.budgetGroupCategories {
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
+  margin-top: var(--space-1);
 }
 
 .budgetRow {
@@ -60,11 +68,21 @@
   overflow: hidden;
 }
 
+.budgetTrackGroup {
+  height: 8px;
+  margin-bottom: var(--space-1);
+}
+
 .budgetFill {
   height: 100%;
   border-radius: var(--radius-pill);
   background: var(--up);
   transition: width 0.3s ease;
+}
+
+.budgetFillGroup {
+  background: var(--fg);
+  opacity: 0.85;
 }
 
 .budgetFillOver {

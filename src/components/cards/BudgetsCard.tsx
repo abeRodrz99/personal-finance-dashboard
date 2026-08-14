@@ -28,7 +28,7 @@ export function BudgetsCard({ groups, categories, monthTransactions }: BudgetsCa
       const groupTotal = groupCategories.reduce((sum, r) => sum + r.spent, 0);
       return { group, rows: groupCategories, total: groupTotal };
     })
-    .filter((s) => s.rows.length > 0);
+    .filter((s) => s.rows.length > 0 || s.group.monthly_limit_cents);
 
   const ungroupedRows = spendingCategories
     .filter((c) => !c.group_id)
@@ -50,20 +50,28 @@ export function BudgetsCard({ groups, categories, monthTransactions }: BudgetsCa
 
       {sections.map(({ group, rows, total }) => (
         <div key={group.id} className="budgetGroup">
-          <div className="budgetGroupHeader">
+          <div className="budgetGroupHeaderRow">
             <span className="budgetGroupName">{group.name}</span>
-            <span className="budgetGroupTotal tabular">{formatMoney(total)}</span>
+            <span className="budgetGroupAmount tabular">
+              {formatMoney(total)}
+              {group.monthly_limit_cents ? ` / ${formatMoney(group.monthly_limit_cents)}` : ''}
+            </span>
           </div>
-          {rows.map(({ category, spent }) => (
-            <BudgetRow key={category.id} name={category.name} spent={spent} limit={category.monthly_limit_cents} />
-          ))}
+          {group.monthly_limit_cents && (
+            <GroupBar spent={total} limit={group.monthly_limit_cents} />
+          )}
+          <div className="budgetGroupCategories">
+            {rows.map(({ category, spent }) => (
+              <BudgetRow key={category.id} name={category.name} spent={spent} limit={category.monthly_limit_cents} />
+            ))}
+          </div>
         </div>
       ))}
 
       {ungroupedRows.length > 0 && (
         <div className="budgetGroup">
           {sections.length > 0 && (
-            <div className="budgetGroupHeader">
+            <div className="budgetGroupHeaderRow">
               <span className="budgetGroupName">Ungrouped</span>
             </div>
           )}
@@ -73,6 +81,19 @@ export function BudgetsCard({ groups, categories, monthTransactions }: BudgetsCa
         </div>
       )}
     </Card>
+  );
+}
+
+function GroupBar({ spent, limit }: { spent: number; limit: number }) {
+  const pct = Math.min(100, (spent / limit) * 100);
+  const over = spent > limit;
+  return (
+    <div className="budgetTrack budgetTrackGroup">
+      <div
+        className={`budgetFill budgetFillGroup${over ? ' budgetFillOver' : ''}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }
 

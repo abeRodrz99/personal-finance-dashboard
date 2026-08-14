@@ -53,7 +53,7 @@ export function Categories() {
           return (
             <Card
               key={group.id}
-              title={group.name}
+              title={group.monthly_limit_cents ? `${group.name} · ${formatMoney(group.monthly_limit_cents)}/mo` : group.name}
               actions={
                 <div className="groupActions">
                   <button type="button" className="cardAddBtn" onClick={() => setDialog({ kind: 'category', groupId: group.id })}>

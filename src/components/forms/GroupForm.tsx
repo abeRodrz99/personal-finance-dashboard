@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { CategoryGroup } from '../../lib/types';
+import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteCategoryGroup, insertCategoryGroup, updateCategoryGroup } from '../../lib/repository';
 
 interface GroupFormProps {
@@ -9,6 +10,9 @@ interface GroupFormProps {
 
 export function GroupForm({ group, onDone }: GroupFormProps) {
   const [name, setName] = useState(group?.name ?? '');
+  const [limit, setLimit] = useState(
+    group?.monthly_limit_cents ? centsToDollarsString(group.monthly_limit_cents) : '',
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -17,10 +21,11 @@ export function GroupForm({ group, onDone }: GroupFormProps) {
     setError(null);
     setPending(true);
     try {
+      const limitCents = limit ? parseDollarsToCents(limit) : null;
       if (group) {
-        await updateCategoryGroup(group.id, name);
+        await updateCategoryGroup(group.id, name, limitCents);
       } else {
-        await insertCategoryGroup(name);
+        await insertCategoryGroup(name, limitCents);
       }
       onDone();
     } catch (err) {
@@ -48,6 +53,16 @@ export function GroupForm({ group, onDone }: GroupFormProps) {
       <div className="field">
         <label htmlFor="grp-name">Group name (e.g. "Essentials")</label>
         <input id="grp-name" value={name} onChange={(e) => setName(e.target.value)} required />
+      </div>
+      <div className="field">
+        <label htmlFor="grp-limit">Monthly budget for this group (optional)</label>
+        <input
+          id="grp-limit"
+          inputMode="decimal"
+          placeholder="No limit"
+          value={limit}
+          onChange={(e) => setLimit(e.target.value)}
+        />
       </div>
       {error && <p className="formError">{error}</p>}
       <div className="formActions">

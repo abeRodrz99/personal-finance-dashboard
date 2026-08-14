@@ -1,0 +1,52 @@
+.goalRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+}
+
+.goalRow + .goalRow {
+  border-top: 1px solid var(--line);
+}
+
+.goalRowHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.goalRowName {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.goalRowAmount {
+  color: var(--mid);
+}
+
+.goalTrack {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+  overflow: hidden;
+}
+
+.goalFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--up);
+  transition: width 0.3s ease;
+}
+
+.goalFillDone {
+  background: var(--up);
+  box-shadow: 0 0 0 1px var(--up) inset;
+}
+
+.goalRowFooter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--low);
+}

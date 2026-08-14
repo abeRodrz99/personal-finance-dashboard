@@ -6,15 +6,17 @@ import { AccountsCard } from '../components/cards/AccountsCard';
 import { HoldingsCard } from '../components/cards/HoldingsCard';
 import { TransactionsCard } from '../components/cards/TransactionsCard';
 import { BudgetsCard } from '../components/cards/BudgetsCard';
+import { GoalsCard } from '../components/cards/GoalsCard';
 import {
   getNetWorthSeries,
   listAccounts,
   listCategories,
   listCategoryGroups,
+  listGoals,
   listHoldings,
   listTransactions,
 } from '../lib/repository';
-import type { Account, Category, CategoryGroup, Holding, Transaction } from '../lib/types';
+import type { Account, Category, CategoryGroup, Goal, Holding, Transaction } from '../lib/types';
 import { netWorthContribution } from '../lib/types';
 
 const RECENT_LIMIT = 8;
@@ -25,6 +27,7 @@ export function Dashboard() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [groups, setGroups] = useState<CategoryGroup[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [recent, setRecent] = useState<Transaction[]>([]);
   const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
   const [series, setSeries] = useState<{ month: string; value: number }[]>([]);
@@ -35,20 +38,23 @@ export function Dashboard() {
     const monthStart = `${now.toISOString().slice(0, 7)}-01`;
     const monthEnd = `${now.toISOString().slice(0, 7)}-31`;
 
-    const [accountsRes, holdingsRes, categoriesRes, groupsRes, recentRes, monthRes, seriesRes] = await Promise.all([
-      listAccounts(),
-      listHoldings(),
-      listCategories(),
-      listCategoryGroups(),
-      listTransactions({ limit: RECENT_LIMIT }),
-      listTransactions({ startDate: monthStart, endDate: monthEnd, limit: 500 }),
-      getNetWorthSeries(CHART_MONTHS),
-    ]);
+    const [accountsRes, holdingsRes, categoriesRes, groupsRes, goalsRes, recentRes, monthRes, seriesRes] =
+      await Promise.all([
+        listAccounts(),
+        listHoldings(),
+        listCategories(),
+        listCategoryGroups(),
+        listGoals(),
+        listTransactions({ limit: RECENT_LIMIT }),
+        listTransactions({ startDate: monthStart, endDate: monthEnd, limit: 500 }),
+        getNetWorthSeries(CHART_MONTHS),
+      ]);
 
     setAccounts(accountsRes);
     setHoldings(holdingsRes);
     setCategories(categoriesRes);
     setGroups(groupsRes);
+    setGoals(goalsRes);
     setRecent(recentRes.rows);
     setMonthTransactions(monthRes.rows);
     setSeries(seriesRes);
@@ -79,6 +85,7 @@ export function Dashboard() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
           <TransactionsCard transactions={recent} accounts={accounts} categories={categories} onChanged={load} />
+          <GoalsCard goals={goals} accounts={accounts} onChanged={load} />
           <HoldingsCard holdings={holdings} accounts={accounts} onChanged={load} />
         </div>
       </Grid>

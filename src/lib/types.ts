@@ -19,6 +19,7 @@ export interface CategoryGroup {
   user_id: string;
   name: string;
   sort_order: number;
+  monthly_limit_cents: number | null;
   created_at: string;
 }
 
@@ -65,6 +66,18 @@ export interface NetWorthSnapshot {
   cash_cents: number;
   invested_cents: number;
   owed_cents: number;
+}
+
+export interface Goal {
+  id: string;
+  user_id: string;
+  name: string;
+  target_cents: number;
+  current_cents: number; // used only when linked_account_id is null
+  linked_account_id: string | null;
+  target_date: string | null; // ISO yyyy-mm-dd
+  created_at: string;
+  updated_at: string;
 }
 
 export function isOutflow(tx: Pick<Transaction, 'amount_cents'>): boolean {
