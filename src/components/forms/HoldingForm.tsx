@@ -33,6 +33,8 @@ export function HoldingForm({ holding, currentAccountName, currentAccountInstitu
         quantity: Number.parseFloat(quantity) || 0,
         cost_basis_cents: null,
         institution_value_cents: parseDollarsToCents(value),
+        opening_value_cents: null,
+        opening_date: null,
       };
       if (holding) {
         await updateHolding(holding.id, input);

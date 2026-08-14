@@ -38,6 +38,7 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
         account_id: accountId,
         category_id: categoryId || null,
         amount_cents: signedCents,
+        is_ignored: false,
       };
       if (transaction) {
         await updateTransaction(transaction.id, input);
