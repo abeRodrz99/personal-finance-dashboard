@@ -386,16 +386,21 @@ async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): P
 
 // --- Net worth trend ---------------------------------------------------------
 
+export type NetWorthGranularity = 'day' | 'month';
+
 /**
- * Reconstructs net worth at the end of each past month by working backward
- * from today's balance using the transaction ledger — no separate snapshot
- * table needed, and no waiting for real time to pass to see history.
+ * Reconstructs net worth at each point in a trailing window by working
+ * backward from today's balance using the transaction ledger — no separate
+ * snapshot table needed, and no waiting for real time to pass to see
+ * history. Supports day-level granularity (for 1M/3M views, where monthly
+ * buckets would be too coarse to show anything) or month-level (for a 1Y
+ * view).
  *
  * The logic: every transaction's effect on net worth is always exactly
  * -amount_cents, regardless of account type (an outflow reduces cash *or*
  * increases debt — either way net worth drops by the same amount; an inflow
- * is the mirror image). So "net worth as of the end of a past month" is just
- * today's total with every transaction *after* that month added back in.
+ * is the mirror image). So "net worth as of a past point in time" is just
+ * today's total with every transaction *after* that point added back in.
  *
  * Limitation: invested-account (holdings) value isn't reconstructed
  * historically since we don't track past market prices — its current value
@@ -403,7 +408,10 @@ async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): P
  * vast majority of day-to-day activity) are fully accurate back to whenever
  * transactions started being logged.
  */
-export async function getNetWorthSeries(months: number): Promise<{ month: string; value: number }[]> {
+export async function getNetWorthSeries(
+  periods: number,
+  granularity: NetWorthGranularity = 'month',
+): Promise<{ date: string; value: number }[]> {
   const accounts = await listAccounts();
   const typeByAccount = new Map(accounts.map((a) => [a.id, a.type]));
 
@@ -414,7 +422,10 @@ export async function getNetWorthSeries(months: number): Promise<{ month: string
   }, 0);
 
   const now = new Date();
-  const windowStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+  const windowStart =
+    granularity === 'month'
+      ? new Date(now.getFullYear(), now.getMonth() - (periods - 1), 1)
+      : new Date(now.getFullYear(), now.getMonth(), now.getDate() - (periods - 1));
 
   const { rows: txs } = await listTransactions({
     startDate: windowStart.toISOString().slice(0, 10),
@@ -422,19 +433,30 @@ export async function getNetWorthSeries(months: number): Promise<{ month: string
   });
   const relevantTxs = txs.filter((tx) => typeByAccount.get(tx.account_id) !== 'invested');
 
-  const series: { month: string; value: number }[] = [];
-  for (let i = months - 1; i >= 0; i--) {
-    const monthKey = new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString().slice(0, 7);
-    const cutoff = new Date(now.getFullYear(), now.getMonth() - i + 1, 1); // first day of the following month
+  const series: { date: string; value: number }[] = [];
+  for (let i = periods - 1; i >= 0; i--) {
+    let pointDate: Date;
+    let cutoff: Date;
+    let label: string;
+
+    if (granularity === 'month') {
+      pointDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      cutoff = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      label = pointDate.toISOString().slice(0, 7);
+    } else {
+      pointDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1);
+      label = pointDate.toISOString().slice(0, 10);
+    }
 
     const futureAmountSum = relevantTxs
       .filter((tx) => new Date(tx.date) >= cutoff)
       .reduce((sum, tx) => sum + tx.amount_cents, 0);
 
-    // Add back every transaction that happened after this month to "undo"
+    // Add back every transaction that happened after this point to "undo"
     // its effect and recover what the balance was at that point in time.
     const pastCashOwedNet = currentCashOwedNet + futureAmountSum;
-    series.push({ month: monthKey, value: pastCashOwedNet + investedTotal });
+    series.push({ date: label, value: pastCashOwedNet + investedTotal });
   }
 
   return series;

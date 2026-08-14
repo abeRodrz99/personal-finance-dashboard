@@ -10,18 +10,63 @@
   margin-bottom: var(--space-5);
 }
 
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .heroLabel {
+  display: block;
   font-size: 13px;
   color: var(--mid);
   font-weight: 500;
 }
 
 .heroBig {
+  display: block;
   font-size: clamp(38px, 6vw, 48px);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
 
+.heroRangeSwitch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--seg);
+  border-radius: var(--radius-pill);
+  flex: none;
+}
+
+.heroRangeBtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mid);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.heroRangeBtn:hover {
+  color: var(--fg);
+}
+
+.heroRangeBtnActive {
+  background: var(--seg-on);
+  color: var(--fg);
+}
+
 .heroChart {
   margin: 0 -8px -8px;
+}
+
+/* Recharts focuses its internal wrapper div on click for accessibility,
+   which otherwise picks up the global :focus-visible outline and draws a
+   box around the whole chart. The chart itself has no keyboard-operable
+   controls, so suppress it here specifically. */
+.heroChart :focus,
+.heroChart :focus-visible {
+  outline: none;
 }
