@@ -23,7 +23,7 @@ export function formatMoney(cents: number, opts: { sign?: boolean } = {}): strin
     currency: 'USD',
   });
   if (opts.sign && cents !== 0) {
-    return cents < 0 ? `-${formatted}` : `+${formatted}`;
+    return cents < 0 ? `+${formatted}` : `-${formatted}`;
   }
   return cents < 0 ? `-${formatted}` : formatted;
 }
