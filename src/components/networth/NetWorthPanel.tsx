@@ -44,7 +44,7 @@ export function NetWorthPanel({ current, series, range, onRangeChange }: NetWort
               </linearGradient>
             </defs>
             <YAxis hide domain={['dataMin - 1000', 'dataMax + 1000']} />
-            <Area type="natural" dataKey="value" stroke="var(--up)" strokeWidth={2} fill="url(#netWorthFill)" />
+            <Area type="monotone" dataKey="value" stroke="var(--up)" strokeWidth={2} fill="url(#netWorthFill)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
