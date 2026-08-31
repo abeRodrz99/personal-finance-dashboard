@@ -4,7 +4,9 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   padding: 0;
-  width: min(420px, calc(100vw - 32px));
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   position: fixed;
   top: 50%;
@@ -24,6 +26,10 @@
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 1;
 }
 
 .dialogTitle {
@@ -80,6 +86,95 @@
   border-color: var(--up);
 }
 
+.fieldRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.fieldRow .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.fieldLinkBtn {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mid);
+  padding: 2px 0;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.fieldLinkBtn:hover {
+  color: var(--up);
+  text-decoration-color: var(--up);
+}
+
+.backfillSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--seg);
+  border-radius: var(--radius-control);
+}
+
+.backfillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mid);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.backfillSection .fieldHint {
+  margin-top: 0;
+}
+
+.noteTextarea {
+  background: var(--seg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 10px var(--space-3);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--fg);
+  resize: vertical;
+  min-height: 140px;
+}
+
+.noteTextarea:focus {
+  border-color: var(--up);
+  outline: none;
+}
+
+.fieldCheckbox label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.fieldCheckbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--up);
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.5;
+  margin-top: -8px;
+}
+
 .formActions {
   display: flex;
   justify-content: space-between;
@@ -117,24 +212,59 @@
   font-size: 13px;
 }
 
-.fieldCheckbox label {
+.splitRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  padding: var(--space-3);
+  background: var(--seg);
+  border-radius: var(--radius-control);
+}
+
+.splitRowFields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.splitRemoveBtn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-control);
+  color: var(--down);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: center;
+}
+
+.splitRemoveBtn:hover {
+  background: var(--down-tint);
+}
+
+.splitAddBtn {
+  align-self: flex-start;
   font-size: 13px;
-  color: var(--fg);
-  cursor: pointer;
+  font-weight: 500;
+  color: var(--up);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-control);
 }
 
-.fieldCheckbox input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--up);
+.splitAddBtn:hover {
+  background: var(--up-tint);
 }
 
-.fieldHint {
-  font-size: 12px;
-  color: var(--mid);
-  line-height: 1.5;
-  margin-top: -8px;
+.splitTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.splitTotalMismatch {
+  color: var(--down);
+  font-weight: 600;
 }

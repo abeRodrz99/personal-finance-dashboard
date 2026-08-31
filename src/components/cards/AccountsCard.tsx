@@ -4,15 +4,26 @@ import { Row } from '../primitives/Row';
 import { Dialog } from '../primitives/Dialog';
 import { AccountForm } from '../forms/AccountForm';
 import { formatMoney } from '../../lib/money';
-import type { Account } from '../../lib/types';
+import type { Account, AccountType } from '../../lib/types';
 
 interface AccountsCardProps {
   accounts: Account[];
   onChanged: () => void;
 }
 
+type Tab = Exclude<AccountType, never>;
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'cash', label: 'Bank Accounts' },
+  { key: 'owed', label: 'Credit Cards' },
+  { key: 'invested', label: 'Investments' },
+];
+
 export function AccountsCard({ accounts, onChanged }: AccountsCardProps) {
+  const [tab, setTab] = useState<Tab>('cash');
   const [dialogAccount, setDialogAccount] = useState<Account | 'new' | null>(null);
+
+  const visibleAccounts = accounts.filter((a) => a.type === tab);
 
   function close() {
     setDialogAccount(null);
@@ -24,13 +35,33 @@ export function AccountsCard({ accounts, onChanged }: AccountsCardProps) {
       <Card
         title="Accounts"
         actions={
-          <button type="button" className="cardAddBtn" onClick={() => setDialogAccount('new')}>
-            + Add
-          </button>
+          tab !== 'invested' ? (
+            <button type="button" className="cardAddBtn" onClick={() => setDialogAccount('new')}>
+              + Add
+            </button>
+          ) : undefined
         }
       >
-        {accounts.length === 0 && <p className="cardEmpty">No accounts yet. Add your first one.</p>}
-        {accounts.map((a) => (
+        <div className="tabSwitch">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`tabSwitchBtn${tab === t.key ? ' tabSwitchBtnActive' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {visibleAccounts.length === 0 && tab !== 'invested' && (
+          <p className="cardEmpty">No accounts here yet. Add your first one.</p>
+        )}
+        {visibleAccounts.length === 0 && tab === 'invested' && (
+          <p className="cardEmpty">No investment accounts yet — add a holding to create one.</p>
+        )}
+        {visibleAccounts.map((a) => (
           <Row
             key={a.id}
             title={a.name}
@@ -47,7 +78,11 @@ export function AccountsCard({ accounts, onChanged }: AccountsCardProps) {
         title={dialogAccount === 'new' ? 'Add account' : 'Edit account'}
       >
         {dialogAccount && (
-          <AccountForm account={dialogAccount === 'new' ? undefined : dialogAccount} onDone={close} />
+          <AccountForm
+            account={dialogAccount === 'new' ? undefined : dialogAccount}
+            defaultType={tab === 'invested' ? 'cash' : tab}
+            onDone={close}
+          />
         )}
       </Dialog>
     </>

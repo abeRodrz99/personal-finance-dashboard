@@ -1,0 +1,46 @@
+.notesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.noteCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius-card);
+  text-align: left;
+  min-height: 140px;
+}
+
+.noteCard:hover {
+  background: var(--seg);
+}
+
+.noteCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.noteCardBody {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.noteCardDate {
+  font-size: 11px;
+  color: var(--low);
+}

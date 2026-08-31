@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { Account, Goal } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteGoal, insertGoal, updateGoal } from '../../lib/repository';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface GoalFormProps {
   goal?: Goal;
@@ -10,6 +11,7 @@ interface GoalFormProps {
 }
 
 export function GoalForm({ goal, accounts, onDone }: GoalFormProps) {
+  const confirmDialog = useConfirm();
   const [name, setName] = useState(goal?.name ?? '');
   const [target, setTarget] = useState(goal ? centsToDollarsString(goal.target_cents) : '');
   const [linkedAccountId, setLinkedAccountId] = useState(goal?.linked_account_id ?? '');
@@ -18,8 +20,6 @@ export function GoalForm({ goal, accounts, onDone }: GoalFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  // Non-owed accounts only — a goal tracking "pay off this card" doesn't fit
-  // the same progress-bar-fills-up model as a savings goal.
   const linkableAccounts = accounts.filter((a) => a.type !== 'owed');
 
   async function handleSubmit(e: FormEvent) {
@@ -49,7 +49,7 @@ export function GoalForm({ goal, accounts, onDone }: GoalFormProps) {
 
   async function handleDelete() {
     if (!goal) return;
-    if (!confirm('Delete this goal?')) return;
+    if (!(await confirmDialog('Delete this goal?'))) return;
     setPending(true);
     try {
       await deleteGoal(goal.id);

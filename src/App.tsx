@@ -10,6 +10,7 @@ import { Categories } from './pages/Categories';
 import { Accounts } from './pages/Accounts';
 import { Goals } from './pages/Goals';
 import { Holdings } from './pages/Holdings';
+import { Notes } from './pages/Notes';
 
 export default function App() {
   return (
@@ -19,54 +20,13 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/transactions"
-                element={
-                  <ProtectedRoute>
-                    <Transactions />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categories"
-                element={
-                  <ProtectedRoute>
-                    <Categories />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/accounts"
-                element={
-                  <ProtectedRoute>
-                    <Accounts />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/goals"
-                element={
-                  <ProtectedRoute>
-                    <Goals />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/holdings"
-                element={
-                  <ProtectedRoute>
-                    <Holdings />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+              <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+              <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+              <Route path="/holdings" element={<ProtectedRoute><Holdings /></ProtectedRoute>} />
+              <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             </Routes>
           </BrowserRouter>
         </ConfirmProvider>

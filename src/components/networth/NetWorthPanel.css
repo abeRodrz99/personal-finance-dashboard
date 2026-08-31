@@ -62,10 +62,6 @@
   margin: 0 -8px -8px;
 }
 
-/* Recharts focuses its internal wrapper div on click for accessibility,
-   which otherwise picks up the global :focus-visible outline and draws a
-   box around the whole chart. The chart itself has no keyboard-operable
-   controls, so suppress it here specifically. */
 .heroChart :focus,
 .heroChart :focus-visible {
   outline: none;

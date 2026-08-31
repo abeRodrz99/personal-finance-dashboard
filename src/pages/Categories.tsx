@@ -40,9 +40,9 @@ export function Categories() {
   return (
     <Shell title="Categories" showBack>
       <p className="categoriesIntro">
-        Group your spending categories the way you actually budget — Essentials, Personal, Savings,
-        or whatever split makes sense to you. Each category can still carry its own monthly limit,
-        which is what the budget bars on the dashboard measure against.
+        Group your spending categories the way you actually budget — Essentials, Personal, Savings, or
+        whatever split makes sense to you. Each category can still carry its own monthly limit, which is
+        what the budget bars on the dashboard measure against.
       </p>
 
       {loading && <p className="cardEmpty">Loading…</p>}
@@ -56,7 +56,11 @@ export function Categories() {
               title={group.monthly_limit_cents ? `${group.name} · ${formatMoney(group.monthly_limit_cents)}/mo` : group.name}
               actions={
                 <div className="groupActions">
-                  <button type="button" className="cardAddBtn" onClick={() => setDialog({ kind: 'category', groupId: group.id })}>
+                  <button
+                    type="button"
+                    className="cardAddBtn"
+                    onClick={() => setDialog({ kind: 'category', groupId: group.id })}
+                  >
                     + Category
                   </button>
                   <button type="button" className="cardAddBtn" onClick={() => setDialog({ kind: 'group', group })}>

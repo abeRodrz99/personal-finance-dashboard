@@ -52,3 +52,82 @@
   opacity: 0.4;
   cursor: default;
 }
+
+.txSelectAllRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.txSelectAllLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--mid);
+  cursor: pointer;
+}
+
+.txSelectAllLabel input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--up);
+}
+
+.txSelectedCount {
+  font-size: 13px;
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.txBulkBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  background: var(--seg);
+  border-radius: var(--radius-control);
+}
+
+.txBulkBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  padding: 8px var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.txBulkBtn:hover:not(:disabled) {
+  background: var(--chip);
+}
+
+.txBulkBtnDanger {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--down);
+  padding: 8px var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--down-tint);
+  margin-left: auto;
+}
+
+.txBulkBtnDanger:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.txBulkBtn:disabled,
+.txBulkBtnDanger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.txRowCheckbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--up);
+}

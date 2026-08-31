@@ -29,3 +29,51 @@
 .cardFooterLink:hover {
   color: var(--fg);
 }
+
+/* Responsive visibility utilities. 860px matches the Grid breakpoint. */
+.hideOnMobile {
+  display: none;
+}
+
+.showOnMobile {
+  display: flex;
+}
+
+@media (min-width: 860px) {
+  .hideOnMobile {
+    display: revert;
+  }
+
+  .showOnMobile {
+    display: none;
+  }
+}
+
+/* Segmented tab control, used for Account type tabs and similar. */
+.tabSwitch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--seg);
+  border-radius: var(--radius-pill);
+  width: fit-content;
+  margin-bottom: var(--space-4);
+}
+
+.tabSwitchBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mid);
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.tabSwitchBtn:hover {
+  color: var(--fg);
+}
+
+.tabSwitchBtnActive {
+  background: var(--seg-on);
+  color: var(--fg);
+}

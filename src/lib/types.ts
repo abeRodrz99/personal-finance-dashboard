@@ -46,6 +46,7 @@ export interface Transaction {
   raw_text: string | null;
   amount_cents: number; // positive = outflow, negative = inflow
   is_ignored: boolean; // excluded from budget totals, still counts toward balance
+  split_parent_id: string | null; // if set, this row is one piece of a split transaction
   created_at: string;
 }
 
@@ -81,6 +82,15 @@ export interface Goal {
   current_cents: number; // used only when linked_account_id is null
   linked_account_id: string | null;
   target_date: string | null; // ISO yyyy-mm-dd
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
   created_at: string;
   updated_at: string;
 }

@@ -1,25 +1,17 @@
-/*
- * Global tokens and reset only.
- * Component-specific rules live in each component's own .css file.
- */
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
   --radius-card: 16px;
   --radius-tile: 14px;
   --radius-control: 9px;
   --radius-pill: 999px;
-
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 22px;
   --space-6: 28px;
-
   --shell-max: 600px;
   --shell-max-wide: 1180px;
   --shell-max-ultra: 1280px;
@@ -65,17 +57,13 @@
   color-scheme: light;
 }
 
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  min-height: 100%;
-}
+html { min-height: 100%; }
 
 body {
   min-height: 100vh;
@@ -87,38 +75,14 @@ body {
   transition: background 0.25s ease, color 0.25s ease;
 }
 
-button {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-input, select {
-  font: inherit;
-  color: inherit;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--up);
-  outline-offset: 3px;
-  border-radius: var(--space-2);
-}
-
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--up); outline-offset: 3px; border-radius: var(--space-2); }
+.tabular { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

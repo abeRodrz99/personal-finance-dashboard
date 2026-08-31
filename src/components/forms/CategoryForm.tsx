@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { Category, CategoryGroup, CategoryKind } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteCategory, insertCategory, updateCategory } from '../../lib/repository';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface CategoryFormProps {
   category?: Category;
@@ -11,6 +12,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ category, groups, defaultGroupId, onDone }: CategoryFormProps) {
+  const confirmDialog = useConfirm();
   const [name, setName] = useState(category?.name ?? '');
   const [kind, setKind] = useState<CategoryKind>(category?.kind ?? 'spending');
   const [groupId, setGroupId] = useState(category?.group_id ?? defaultGroupId ?? '');
@@ -48,7 +50,7 @@ export function CategoryForm({ category, groups, defaultGroupId, onDone }: Categ
 
   async function handleDelete() {
     if (!category) return;
-    if (!confirm('Delete this category? Its transactions will move to Uncategorized.')) return;
+    if (!(await confirmDialog('Delete this category? Its transactions will move to Uncategorized.'))) return;
     setPending(true);
     try {
       await deleteCategory(category.id);

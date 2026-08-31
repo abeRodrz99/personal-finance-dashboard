@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import type { Holding } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteHolding, findOrCreateInvestedAccount, insertHolding, updateHolding } from '../../lib/repository';
@@ -11,12 +12,20 @@ interface HoldingFormProps {
 }
 
 export function HoldingForm({ holding, currentAccountName, currentAccountInstitution, onDone }: HoldingFormProps) {
+  const confirmDialog = useConfirm();
   const [symbol, setSymbol] = useState(holding?.symbol ?? '');
   const [name, setName] = useState(holding?.name ?? '');
   const [accountName, setAccountName] = useState(currentAccountName ?? '');
   const [institution, setInstitution] = useState(currentAccountInstitution ?? '');
   const [quantity, setQuantity] = useState(holding ? String(holding.quantity) : '');
   const [value, setValue] = useState(holding ? centsToDollarsString(holding.institution_value_cents) : '');
+  const [showBackfill, setShowBackfill] = useState(Boolean(holding?.opening_date || holding?.opening_value_cents));
+  const [openingDate, setOpeningDate] = useState(holding?.opening_date ?? '');
+  const [openingValue, setOpeningValue] = useState(
+    holding?.opening_value_cents !== null && holding?.opening_value_cents !== undefined
+      ? centsToDollarsString(holding.opening_value_cents)
+      : '',
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -33,8 +42,8 @@ export function HoldingForm({ holding, currentAccountName, currentAccountInstitu
         quantity: Number.parseFloat(quantity) || 0,
         cost_basis_cents: null,
         institution_value_cents: parseDollarsToCents(value),
-        opening_value_cents: null,
-        opening_date: null,
+        opening_date: showBackfill && openingDate ? openingDate : null,
+        opening_value_cents: showBackfill && openingDate && openingValue ? parseDollarsToCents(openingValue) : null,
       };
       if (holding) {
         await updateHolding(holding.id, input);
@@ -51,7 +60,7 @@ export function HoldingForm({ holding, currentAccountName, currentAccountInstitu
 
   async function handleDelete() {
     if (!holding) return;
-    if (!confirm('Delete this holding?')) return;
+    if (!(await confirmDialog('Delete this holding?'))) return;
     setPending(true);
     try {
       await deleteHolding(holding.id);
@@ -101,6 +110,47 @@ export function HoldingForm({ holding, currentAccountName, currentAccountInstitu
           required
         />
       </div>
+
+      <div className="fieldCheckbox">
+        <label htmlFor="h-backfill-toggle">
+          <input
+            id="h-backfill-toggle"
+            type="checkbox"
+            checked={showBackfill}
+            onChange={(e) => setShowBackfill(e.target.checked)}
+          />
+          Backfilling history? Set a starting value
+        </label>
+      </div>
+
+      {showBackfill && (
+        <>
+          <p className="fieldHint">
+            Tells the net worth chart what this holding was worth on a given date. Before this date the
+            chart shows this value flat; from this date forward it uses the current value above.
+          </p>
+          <div className="field">
+            <label htmlFor="h-opening-date">As of date</label>
+            <input
+              id="h-opening-date"
+              type="date"
+              value={openingDate}
+              onChange={(e) => setOpeningDate(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="h-opening-value">Value on that date</label>
+            <input
+              id="h-opening-value"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={openingValue}
+              onChange={(e) => setOpeningValue(e.target.value)}
+            />
+          </div>
+        </>
+      )}
+
       {error && <p className="formError">{error}</p>}
       <div className="formActions">
         {holding ? (

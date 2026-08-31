@@ -8,6 +8,8 @@
 
 .rowLeading {
   flex: none;
+  display: flex;
+  align-items: center;
 }
 
 .rowMain {

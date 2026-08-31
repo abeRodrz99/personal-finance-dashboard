@@ -83,12 +83,20 @@ export function Dashboard() {
       <Grid>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
           <BudgetsCard groups={groups} categories={categories} monthTransactions={monthTransactions} />
-          <AccountsCard accounts={accounts} onChanged={load} />
+          <div className="hideOnMobile">
+            <AccountsCard accounts={accounts} onChanged={load} />
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          <TransactionsCard transactions={recent} accounts={accounts} categories={categories} onChanged={load} />
-          <GoalsCard goals={goals} accounts={accounts} onChanged={load} />
-          <HoldingsCard holdings={holdings} accounts={accounts} onChanged={load} />
+          <div className="hideOnMobile">
+            <TransactionsCard transactions={recent} accounts={accounts} categories={categories} onChanged={load} />
+          </div>
+          <div className="hideOnMobile">
+            <GoalsCard goals={goals} accounts={accounts} onChanged={load} />
+          </div>
+          <div className="hideOnMobile">
+            <HoldingsCard holdings={holdings} accounts={accounts} onChanged={load} />
+          </div>
         </div>
       </Grid>
     </Shell>

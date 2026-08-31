@@ -6,7 +6,6 @@ interface ConfirmOptions {
   title?: string;
   message: string;
   confirmLabel?: string;
-  /** false renders the confirm button as the normal primary (green) style instead of red. */
   danger?: boolean;
 }
 
@@ -58,7 +57,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Drop-in async replacement for window.confirm(), styled to match the app. */
 export function useConfirm(): ConfirmFn {
   const ctx = useContext(ConfirmContext);
   if (!ctx) throw new Error('useConfirm must be used within ConfirmProvider');

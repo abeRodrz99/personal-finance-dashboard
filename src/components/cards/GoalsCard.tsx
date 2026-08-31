@@ -45,13 +45,12 @@ export function GoalsCard({ goals, accounts, onChanged }: GoalsCardProps) {
                 </span>
               </div>
               <div className="goalTrack">
-                <div
-                  className={`goalFill${reached ? ' goalFillDone' : ''}`}
-                  style={{ width: `${pct}%` }}
-                />
+                <div className={`goalFill${reached ? ' goalFillDone' : ''}`} style={{ width: `${pct}%` }} />
               </div>
               <div className="goalRowFooter">
-                <span>{pct.toFixed(0)}%{reached ? ' · reached!' : ''}</span>
+                <span>
+                  {pct.toFixed(0)}%{reached ? ' · reached!' : ''}
+                </span>
                 {goal.target_date && <span>by {goal.target_date}</span>}
               </div>
             </div>

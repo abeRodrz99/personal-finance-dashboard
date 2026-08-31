@@ -12,6 +12,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .shellHeaderLeft {
@@ -37,6 +38,23 @@
   font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+.shellNav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-left: var(--space-5);
+}
+
+.shellNavLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mid);
+}
+
+.shellNavLink:hover {
+  color: var(--fg);
 }
 
 .shellSignOut {

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Account, Category, CategoryGroup, Goal, Holding, Transaction } from './types';
+import type { Account, Category, CategoryGroup, Goal, Holding, Note, Transaction } from './types';
 
 /**
  * Every function here assumes an authenticated session. RLS enforces the
@@ -49,6 +49,30 @@ export async function deleteAccount(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Invested accounts (brokerage, 401k, etc.) are never created directly by
+ * the user — they're implied by adding a holding. This finds an existing
+ * invested account matching the given name, or creates one, so the Holdings
+ * form can just ask for an account name instead of a pre-existing account.
+ */
+export async function findOrCreateInvestedAccount(name: string, institution: string | null): Promise<Account> {
+  const trimmed = name.trim();
+  const existing = (await listAccounts()).find(
+    (a) => a.type === 'invested' && a.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (existing) return existing;
+
+  return insertAccount({
+    name: trimmed,
+    institution,
+    type: 'invested',
+    subtype: null,
+    mask: null,
+    balance_cents: 0,
+    opening_balance_cents: null,
+    opening_balance_date: null,
+  });
+}
 
 // --- Category Groups ---------------------------------------------------------
 
@@ -103,9 +127,7 @@ export async function listGoals(): Promise<Goal[]> {
   return data as Goal[];
 }
 
-export async function insertGoal(
-  input: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
-): Promise<Goal> {
+export async function insertGoal(input: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Goal> {
   const user_id = await currentUserId();
   const { data, error } = await supabase
     .from('goals')
@@ -132,9 +154,7 @@ export async function deleteGoal(id: string): Promise<void> {
 
 /**
  * A goal's current progress is either its own manually-tracked `current_cents`,
- * or, if linked to an account, that account's live balance — so a goal linked
- * to your Emergency Fund account stays accurate automatically as you log
- * transactions against it, with nothing extra to update by hand.
+ * or, if linked to an account, that account's live balance.
  */
 export function resolveGoalProgress(goal: Goal, accounts: Account[]): number {
   if (goal.linked_account_id) {
@@ -236,7 +256,6 @@ export async function insertTransaction(
     .single();
   if (error) throw error;
 
-  // Keep the account balance in sync with the manual entry.
   await adjustAccountBalance(input.account_id, input.amount_cents);
 
   return data as Transaction;
@@ -246,11 +265,7 @@ export async function updateTransaction(
   id: string,
   input: Partial<Omit<Transaction, 'id' | 'user_id' | 'created_at'>>,
 ): Promise<Transaction> {
-  const { data: before, error: beforeErr } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data: before, error: beforeErr } = await supabase.from('transactions').select('*').eq('id', id).single();
   if (beforeErr) throw beforeErr;
 
   const { data, error } = await supabase.from('transactions').update(input).eq('id', id).select().single();
@@ -271,7 +286,6 @@ export async function deleteTransaction(id: string): Promise<void> {
   const { error } = await supabase.from('transactions').delete().eq('id', id);
   if (error) throw error;
 
-  // Reverse the balance effect of the deleted transaction.
   await adjustAccountBalance(tx.account_id, -tx.amount_cents);
 }
 
@@ -288,6 +302,65 @@ export async function bulkSetTransactionsIgnored(ids: string[], ignored: boolean
   if (error) throw error;
 }
 
+export interface SplitPiece {
+  merchant: string;
+  category_id: string | null;
+  amount_cents: number; // same sign convention as the parent (positive = outflow)
+}
+
+/**
+ * Splits one transaction into several. The original is deleted (reversing
+ * its balance effect) and replaced with one new transaction per piece. All
+ * pieces share a synthetic group id (the first piece's own id, stored in
+ * `split_parent_id` on the rest) so the UI can indicate "this came from a
+ * split" later. Net balance effect is zero as long as pieces sum to the
+ * original amount — the caller is responsible for that; this function
+ * doesn't silently correct a mismatched total.
+ */
+export async function splitTransaction(originalId: string, pieces: SplitPiece[]): Promise<Transaction[]> {
+  const { data: originalData, error: fetchErr } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('id', originalId)
+    .single();
+  if (fetchErr) throw fetchErr;
+  const original = originalData as Transaction;
+
+  const { error: deleteErr } = await supabase.from('transactions').delete().eq('id', originalId);
+  if (deleteErr) throw deleteErr;
+  await adjustAccountBalance(original.account_id, -original.amount_cents);
+
+  const user_id = await currentUserId();
+  const created: Transaction[] = [];
+  let groupId: string | null = null;
+
+  for (const piece of pieces) {
+    const insertResult = await supabase
+      .from('transactions')
+      .insert({
+        user_id,
+        account_id: original.account_id,
+        date: original.date,
+        merchant: piece.merchant,
+        raw_text: original.raw_text,
+        category_id: piece.category_id,
+        amount_cents: piece.amount_cents,
+        is_ignored: original.is_ignored,
+        split_parent_id: groupId,
+      })
+      .select()
+      .single();
+    if (insertResult.error) throw insertResult.error;
+    const created_tx = insertResult.data as Transaction;
+
+    await adjustAccountBalance(original.account_id, piece.amount_cents);
+    created.push(created_tx);
+    if (!groupId) groupId = created_tx.id;
+  }
+
+  return created;
+}
+
 async function adjustAccountBalance(accountId: string, amountCentsDelta: number): Promise<void> {
   const { data: account, error } = await supabase
     .from('accounts')
@@ -301,10 +374,7 @@ async function adjustAccountBalance(accountId: string, amountCentsDelta: number)
   const direction = account.type === 'owed' ? 1 : -1;
   const newBalance = account.balance_cents + direction * amountCentsDelta;
 
-  const { error: updateErr } = await supabase
-    .from('accounts')
-    .update({ balance_cents: newBalance })
-    .eq('id', accountId);
+  const { error: updateErr } = await supabase.from('accounts').update({ balance_cents: newBalance }).eq('id', accountId);
   if (updateErr) throw updateErr;
 }
 
@@ -363,25 +433,6 @@ export async function deleteHolding(id: string): Promise<void> {
   await adjustAccountBalanceRaw(holding.account_id, -holding.institution_value_cents);
 }
 
-export async function findOrCreateInvestedAccount(name: string, institution: string | null): Promise<Account> {
-  const trimmed = name.trim();
-  const existing = (await listAccounts()).find(
-    (a) => a.type === 'invested' && a.name.toLowerCase() === trimmed.toLowerCase(),
-  );
-  if (existing) return existing;
-
-  return insertAccount({
-    name: trimmed,
-    institution,
-    type: 'invested',
-    subtype: null,
-    mask: null,
-    balance_cents: 0,
-    opening_balance_cents: null,
-    opening_balance_date: null,
-  });
-}
-
 /** Adds a cents delta straight to an account's balance, no sign flipping (used for holdings). */
 async function adjustAccountBalanceRaw(accountId: string, centsDelta: number): Promise<void> {
   const { data: account, error } = await supabase.from('accounts').select('balance_cents').eq('id', accountId).single();
@@ -400,23 +451,11 @@ export type NetWorthGranularity = 'day' | 'month';
 
 /**
  * Reconstructs net worth at each point in a trailing window, per account,
- * then sums the results. No separate snapshot table needed, and no waiting
- * for real time to pass to see history.
- *
- * For each cash/owed account: work backward from today's balance by adding
- * back every transaction dated after the point in question (a transaction's
- * balance effect is always direction * amount_cents, where direction is +1
- * for owed accounts and -1 otherwise). This is accurate for any point on or
- * after the account's `opening_balance_date`, since it assumes every change
- * since then has been logged. For points *before* that anchor — where nothing
- * has necessarily been logged — the value is held flat at
- * `opening_balance_cents` rather than extrapolated, since we have no basis
- * to guess further back. Accounts with no anchor set fall back to the old
- * behavior: reconstruct all the way back using whatever transactions exist.
- *
- * Invested (holdings) value has no anchor concept — it's held flat at its
- * current value across the whole window, since there's no historical price
- * data to reconstruct from.
+ * then sums the results. For each cash/owed account: work backward from
+ * today's balance by adding back every transaction dated after the point in
+ * question. Accurate on/after the account's `opening_balance_date`; before
+ * that, held flat at `opening_balance_cents`. Invested value is held flat
+ * at its current total across the whole window (no historical pricing).
  */
 export async function getNetWorthSeries(
   periods: number,
@@ -473,9 +512,41 @@ export async function getNetWorthSeries(
     }
 
     const cashOwedTotal = cashOwedAccounts.reduce((sum, a) => sum + cashOwedValueAt(a, pointDate, cutoff), 0);
-
     series.push({ date: label, value: cashOwedTotal + investedTotal });
   }
 
   return series;
+}
+
+// --- Notes ---------------------------------------------------------
+
+export async function listNotes(): Promise<Note[]> {
+  const { data, error } = await supabase.from('notes').select('*').order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data as Note[];
+}
+
+export async function insertNote(input: Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Note> {
+  const user_id = await currentUserId();
+  const { data, error } = await supabase
+    .from('notes')
+    .insert({ ...input, user_id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Note;
+}
+
+export async function updateNote(
+  id: string,
+  input: Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
+): Promise<Note> {
+  const { data, error } = await supabase.from('notes').update(input).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Note;
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  const { error } = await supabase.from('notes').delete().eq('id', id);
+  if (error) throw error;
 }

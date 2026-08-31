@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { CategoryGroup } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteCategoryGroup, insertCategoryGroup, updateCategoryGroup } from '../../lib/repository';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface GroupFormProps {
   group?: CategoryGroup;
@@ -9,6 +10,7 @@ interface GroupFormProps {
 }
 
 export function GroupForm({ group, onDone }: GroupFormProps) {
+  const confirmDialog = useConfirm();
   const [name, setName] = useState(group?.name ?? '');
   const [limit, setLimit] = useState(
     group?.monthly_limit_cents ? centsToDollarsString(group.monthly_limit_cents) : '',
@@ -37,7 +39,7 @@ export function GroupForm({ group, onDone }: GroupFormProps) {
 
   async function handleDelete() {
     if (!group) return;
-    if (!confirm('Delete this group? Its categories stay, just ungrouped.')) return;
+    if (!(await confirmDialog('Delete this group? Its categories stay, just ungrouped.'))) return;
     setPending(true);
     try {
       await deleteCategoryGroup(group.id);
