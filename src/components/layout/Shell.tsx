@@ -32,13 +32,6 @@ export function Shell({ title, showBack, headerExtra, children }: ShellProps) {
             </Link>
           )}
           <h1 className="shellTitle">{title}</h1>
-          <nav className="shellNav hideOnMobile">
-            {DESKTOP_LINKS.map((link) => (
-              <Link key={link.to} to={link.to} className="shellNavLink">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
         </div>
         <div className="shellHeaderRight">
           {headerExtra}

@@ -33,34 +33,42 @@ export function Dashboard() {
   const [series, setSeries] = useState<{ date: string; value: number }[]>([]);
   const [range, setRange] = useState<NetWorthRange>('3M');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const now = new Date();
-    const monthStart = `${now.toISOString().slice(0, 7)}-01`;
-    const monthEnd = `${now.toISOString().slice(0, 7)}-31`;
-    const rangeCfg = RANGE_CONFIG[range];
+    setError(null);
+    try {
+      const now = new Date();
+      const monthStart = `${now.toISOString().slice(0, 7)}-01`;
+      const monthEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // last real day of month
+      const monthEnd = monthEndDate.toISOString().slice(0, 10);
+      const rangeCfg = RANGE_CONFIG[range];
 
-    const [accountsRes, holdingsRes, categoriesRes, groupsRes, goalsRes, recentRes, monthRes, seriesRes] =
-      await Promise.all([
-        listAccounts(),
-        listHoldings(),
-        listCategories(),
-        listCategoryGroups(),
-        listGoals(),
-        listTransactions({ limit: RECENT_LIMIT }),
-        listTransactions({ startDate: monthStart, endDate: monthEnd, limit: 500 }),
-        getNetWorthSeries(rangeCfg.periods, rangeCfg.granularity),
-      ]);
+      const [accountsRes, holdingsRes, categoriesRes, groupsRes, goalsRes, recentRes, monthRes, seriesRes] =
+        await Promise.all([
+          listAccounts(),
+          listHoldings(),
+          listCategories(),
+          listCategoryGroups(),
+          listGoals(),
+          listTransactions({ limit: RECENT_LIMIT }),
+          listTransactions({ startDate: monthStart, endDate: monthEnd, limit: 500 }),
+          getNetWorthSeries(rangeCfg.periods, rangeCfg.granularity),
+        ]);
 
-    setAccounts(accountsRes);
-    setHoldings(holdingsRes);
-    setCategories(categoriesRes);
-    setGroups(groupsRes);
-    setGoals(goalsRes);
-    setRecent(recentRes.rows);
-    setMonthTransactions(monthRes.rows);
-    setSeries(seriesRes);
-    setLoading(false);
+      setAccounts(accountsRes);
+      setHoldings(holdingsRes);
+      setCategories(categoriesRes);
+      setGroups(groupsRes);
+      setGoals(goalsRes);
+      setRecent(recentRes.rows);
+      setMonthTransactions(monthRes.rows);
+      setSeries(seriesRes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard.');
+    } finally {
+      setLoading(false);
+    }
   }, [range]);
 
   useEffect(() => {
