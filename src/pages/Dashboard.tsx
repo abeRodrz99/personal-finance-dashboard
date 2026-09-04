@@ -87,6 +87,7 @@ export function Dashboard() {
 
   return (
     <Shell title="Finance">
+      {error && <p className="formError">{error}</p>}
       <NetWorthPanel current={netWorth} series={series} range={range} onRangeChange={setRange} />
       <Grid>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>

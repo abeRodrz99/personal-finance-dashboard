@@ -12,12 +12,6 @@ interface ShellProps {
   children: ReactNode;
 }
 
-const DESKTOP_LINKS = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/transactions', label: 'Transactions' },
-  { to: '/categories', label: 'Categories' },
-  { to: '/notes', label: 'Notes' },
-];
 
 export function Shell({ title, showBack, headerExtra, children }: ShellProps) {
   const { signOut } = useAuth();
