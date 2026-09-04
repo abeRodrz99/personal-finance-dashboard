@@ -14,9 +14,10 @@ interface TransactionFormProps {
   accounts: Account[];
   categories: Category[];
   onDone: () => void;
+  onSplit?: () => void; 
 }
 
-export function TransactionForm({ transaction, accounts, categories, onDone }: TransactionFormProps) {
+export function TransactionForm({ transaction, accounts, categories, onDone, onSplit }: TransactionFormProps) {
   const isTransfer = !!transaction?.transfer_group_id;
   const [mode, setMode] = useState<'expense' | 'transfer'>(isTransfer ? 'transfer' : 'expense');
 
@@ -213,6 +214,11 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
           </button>
         ) : (
           <span />
+        )}
+        {transaction && !isTransfer && onSplit && (
+          <button type="button" className="btnGhost" onClick={onSplit} disabled={pending}>
+            Split
+          </button>
         )}
         <button type="submit" className="btnPrimary" disabled={pending || sameAccount}>
           {transaction ? 'Save' : mode === 'transfer' ? 'Add transfer' : 'Add transaction'}
