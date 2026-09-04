@@ -41,15 +41,16 @@ export interface Transaction {
   user_id: string;
   account_id: string;
   category_id: string | null;
-  date: string; // ISO yyyy-mm-dd
+  date: string;
   merchant: string;
   raw_text: string | null;
-  amount_cents: number; // positive = outflow, negative = inflow
-  is_ignored: boolean; // excluded from budget totals, still counts toward balance
-  split_parent_id: string | null; // if set, this row is one piece of a split transaction
+  amount_cents: number;
+  is_ignored: boolean;
+  split_parent_id: string | null;
+  transfer_group_id: string | null;
+  transfer_account_id: string | null;
   created_at: string;
 }
-
 export interface Holding {
   id: string;
   user_id: string;

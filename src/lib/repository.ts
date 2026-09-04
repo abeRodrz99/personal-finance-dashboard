@@ -283,6 +283,11 @@ export async function deleteTransaction(id: string): Promise<void> {
   const { data: tx, error: fetchErr } = await supabase.from('transactions').select('*').eq('id', id).single();
   if (fetchErr) throw fetchErr;
 
+  if (tx.transfer_group_id) {
+    await deleteTransferGroup(tx.transfer_group_id);
+    return;
+  }
+
   const { error } = await supabase.from('transactions').delete().eq('id', id);
   if (error) throw error;
 
@@ -549,4 +554,77 @@ export async function updateNote(
 export async function deleteNote(id: string): Promise<void> {
   const { error } = await supabase.from('notes').delete().eq('id', id);
   if (error) throw error;
+}
+
+export interface TransferInput {
+  date: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amountCents: number; // positive amount being moved
+  note?: string | null;
+}
+
+export async function insertTransfer(input: TransferInput): Promise<{ groupId: string }> {
+  if (input.fromAccountId === input.toAccountId) {
+    throw new Error('Choose two different accounts.');
+  }
+  if (input.amountCents <= 0) {
+    throw new Error('Amount must be greater than zero.');
+  }
+
+  const user_id = await currentUserId();
+  const accounts = await listAccounts();
+  const fromAccount = accounts.find((a) => a.id === input.fromAccountId);
+  const toAccount = accounts.find((a) => a.id === input.toAccountId);
+  if (!fromAccount || !toAccount) throw new Error('Account not found.');
+
+  const groupId = crypto.randomUUID();
+  const amount = Math.abs(input.amountCents);
+
+  // Leg 1: money leaves the source account.
+  const { error: fromErr } = await supabase.from('transactions').insert({
+    user_id,
+    account_id: fromAccount.id,
+    category_id: null,
+    date: input.date,
+    merchant: `Transfer to ${toAccount.name}`,
+    raw_text: input.note ?? null,
+    amount_cents: amount,
+    transfer_group_id: groupId,
+    transfer_account_id: toAccount.id,
+  });
+  if (fromErr) throw fromErr;
+  await adjustAccountBalance(fromAccount.id, amount);
+
+  // Leg 2: destination account reflects the transfer (reduces debt if it's a credit card).
+  const { error: toErr } = await supabase.from('transactions').insert({
+    user_id,
+    account_id: toAccount.id,
+    category_id: null,
+    date: input.date,
+    merchant: `Transfer from ${fromAccount.name}`,
+    raw_text: input.note ?? null,
+    amount_cents: -amount,
+    transfer_group_id: groupId,
+    transfer_account_id: fromAccount.id,
+  });
+  if (toErr) throw toErr;
+  await adjustAccountBalance(toAccount.id, -amount);
+
+  return { groupId };
+}
+
+export async function deleteTransferGroup(groupId: string): Promise<void> {
+  const { data: legs, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transfer_group_id', groupId);
+  if (error) throw error;
+
+  for (const leg of legs as Transaction[]) {
+    await adjustAccountBalance(leg.account_id, -leg.amount_cents);
+  }
+
+  const { error: delErr } = await supabase.from('transactions').delete().eq('transfer_group_id', groupId);
+  if (delErr) throw delErr;
 }
