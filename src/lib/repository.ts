@@ -376,7 +376,7 @@ async function adjustAccountBalance(accountId: string, amountCentsDelta: number)
 
   // Outflow (positive amount) reduces cash/invested balances but *increases*
   // an owed (credit card) balance; inflow does the reverse.
-  const direction = account.type === 'owed' ? 1 : -1;
+  const direction = account.type === 'owed' ? -1 : 1;
   const newBalance = account.balance_cents + direction * amountCentsDelta;
 
   const { error: updateErr } = await supabase.from('accounts').update({ balance_cents: newBalance }).eq('id', accountId);
