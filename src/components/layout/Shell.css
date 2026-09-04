@@ -76,8 +76,4 @@
   padding: 0 var(--space-4) var(--space-6);
 }
 
-@media (min-width: 700px) {
-  .shellNav {
-    display: none;
-  }
-}
+
