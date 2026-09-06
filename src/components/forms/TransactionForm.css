@@ -1,0 +1,126 @@
+.categorySelector {
+  position: relative;
+}
+
+.categoryInput {
+  width: 100%;
+  background: var(--seg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 10px var(--space-3);
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.categoryInput:focus {
+  border-color: var(--up);
+  outline: none;
+}
+
+.categoryDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.categoryEmpty {
+  padding: var(--space-3);
+  text-align: center;
+  color: var(--mid);
+  font-size: 13px;
+}
+
+.categoryOption {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.categoryOption:last-child {
+  border-bottom: none;
+}
+
+.categoryOption:hover {
+  background: var(--seg);
+}
+
+.categoryOption.categoryOptionSelected {
+  background: var(--up-tint);
+  border-left: 3px solid var(--up);
+  padding-left: calc(var(--space-3) - 3px);
+}
+
+.categoryOptionContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.categoryName {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.categoryKind {
+  font-size: 12px;
+  color: var(--mid);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.categorySelected {
+  padding: 10px var(--space-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--seg);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.categorySelected .categoryName {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.categorySelected .categoryKind {
+  color: var(--mid);
+  font-size: 12px;
+}
+
+/* Custom scrollbar for dropdown */
+.categoryDropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.categoryDropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.categoryDropdown::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: var(--radius-pill);
+}
+
+.categoryDropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--mid);
+}
