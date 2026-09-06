@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
-import type { FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import type { Account, Category, Transaction } from '../../lib/types';
 import { centsToDollarsString, parseDollarsToCents } from '../../lib/money';
 import { deleteTransaction, insertTransaction, updateTransaction } from '../../lib/repository';
@@ -21,7 +20,7 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
     transaction ? centsToDollarsString(Math.abs(transaction.amount_cents)) : '',
   );
   const [direction, setDirection] = useState<'out' | 'in'>(
-    transaction ? (transaction.amount_cents < 0 ? 'out' : 'in') : 'out',
+    transaction ? (transaction.amount_cents < 0 ? 'in' : 'out') : 'out',
   );
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -47,6 +46,7 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
         setShowCategoryDropdown(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -54,26 +54,39 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (!accountId) {
-      setError('Please select an account.');
-      return;
-    }
-
     setPending(true);
+    
     try {
+      // Validation
+      if (!accountId) {
+        throw new Error('Please select an account');
+      }
+      
+      if (!merchant.trim()) {
+        throw new Error('Please enter a merchant name');
+      }
+      
       const cents = parseDollarsToCents(amount);
-      const signedCents = direction === 'out' ? -Math.abs(cents) : Math.abs(cents);
+      
+      if (cents === 0) {
+        throw new Error('Please enter a valid amount');
+      }
 
-      // Clean payload: Omit raw_text and ensure category_id is undefined/null clean
+      const signedCents = direction === 'out' ? Math.abs(cents) : -Math.abs(cents);
+      
       const input = {
         date,
         merchant: merchant.trim(),
+        raw_text: null,
         account_id: accountId,
-        category_id: categoryId ? categoryId : null,
+        category_id: categoryId || null,
         amount_cents: signedCents,
+        is_ignored: false,
+        split_parent_id: null,
+        transfer_group_id: null,
+        transfer_account_id: null,
       };
-
+      
       if (transaction) {
         await updateTransaction(transaction.id, input);
       } else {
@@ -81,6 +94,7 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
       }
       onDone();
     } catch (err) {
+      console.error('Transaction error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setPending(false);
@@ -114,6 +128,7 @@ export function TransactionForm({ transaction, accounts, categories, onDone }: T
       <div className="field">
         <label htmlFor="tx-account">Account</label>
         <select id="tx-account" value={accountId} onChange={(e) => setAccountId(e.target.value)} required>
+          <option value="">-- Select an account --</option>
           {accountsByType.cash.length > 0 && (
             <optgroup label="💰 Cash">
               {accountsByType.cash.map((a) => (
